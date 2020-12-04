@@ -1,0 +1,34 @@
+{
+  "name": "heimrichhannot/contao-list-widget-bundle",
+  "type": "contao-bundle",
+  "description": "This bundle offers an input type for displaying a list of entities definable by a callback function.",
+  "license": "LGPL-3.0-or-later",
+  "homepage":"https://github.com/heimrichhannot/contao-list-widget-bundle",
+  "authors":[
+    {
+      "name":"Heimrich & Hannot",
+      "email":"digitales@heimrich-hannot.de",
+      "homepage":"http://www.heimrich-hannot.de",
+      "role":"Developer"
+    }
+  ],
+  "support":{
+    "issues":"https://github.com/heimrichhannot/contao-list-widget-bundle/issues"
+  },
+  "require": {
+    "php": "^7.2",
+    "contao/core-bundle": "^4.4",
+    "symfony/http-kernel": "^3.4|^4.4",
+    "heimrichhannot/contao-request-bundle": "~1.0",
+    "heimrichhannot/datatables": "^1.10",
+    "heimrichhannot/datatables-additional": "^1.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "HeimrichHannot\\ListWidgetBundle\\": "src/"
+    }
+  },
+  "extra": {
+    "contao-manager-plugin": "HeimrichHannot\\ListWidgetBundle\\ContaoManager\\Plugin"
+  }
+}

@@ -1,0 +1,28 @@
+<div class="list-widget<?php if ($this->class): ?> <?= $this->class ?><?php endif; ?>"
+     <?php if ($this->ajax): ?>data-ajax="1" <?php endif; ?>data-processing-action="<?= $this->processingAction; ?>"
+     data-column-defs="<?= $this->columnDefs; ?>" data-language="<?= $this->language; ?>">
+    <?php if (!$this->ajax && empty($this->items)): ?>
+        <?= $GLOBALS['TL_LANG']['MSC']['listWidget']['empty'] ?>
+    <?php else: ?>
+        <table>
+            <thead>
+            <tr>
+                <?php foreach ($this->headerFields as $strLabel): ?>
+                    <th><?= $strLabel ?></th>
+                <?php endforeach; ?>
+            </tr>
+            </thead>
+            <tbody>
+            <?php if (!$this->ajax): ?>
+                <?php foreach ($this->items as $objItem): ?>
+                    <tr>
+                        <?php foreach ($this->headerFields as $strField => $strLabel): ?>
+                            <td><?= is_array($objItem) ? $objItem[$strField] : $objItem->{$strField} ?></td>
+                        <?php endforeach; ?>
+                    </tr>
+                <?php endforeach; ?>
+            <?php endif; ?>
+            </tbody>
+        </table>
+    <?php endif; ?>
+</div>
