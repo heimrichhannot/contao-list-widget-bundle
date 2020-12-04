@@ -12,15 +12,21 @@
 namespace HeimrichHannot\ListWidgetBundle\ContaoManager;
 
 
+use Contao\CoreBundle\ContaoCoreBundle;
 use Contao\ManagerPlugin\Bundle\BundlePluginInterface;
-use Contao\ManagerPlugin\Bundle\Config\ConfigInterface;
+use Contao\ManagerPlugin\Bundle\Config\BundleConfig;
 use Contao\ManagerPlugin\Bundle\Parser\ParserInterface;
+use HeimrichHannot\ListWidgetBundle\HeimrichHannotListWidgetBundle;
 
 class Plugin implements BundlePluginInterface
 {
 
     public function getBundles(ParserInterface $parser)
     {
-        // TODO: Implement getBundles() method.
+        return [
+            BundleConfig::create(HeimrichHannotListWidgetBundle::class)->setLoadAfter([
+                ContaoCoreBundle::class
+            ]),
+        ];
     }
 }

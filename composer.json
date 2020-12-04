@@ -17,11 +17,16 @@
   },
   "require": {
     "php": "^7.2",
+    "ext-json": "*",
     "contao/core-bundle": "^4.4",
     "symfony/http-kernel": "^3.4|^4.4",
     "heimrichhannot/contao-request-bundle": "~1.0",
+    "heimrichhannot/contao-ajax-bundle": "~1.0",
     "heimrichhannot/datatables": "^1.10",
     "heimrichhannot/datatables-additional": "^1.0"
+  },
+  "replace": {
+    "heimrichhannot/contao-list_widget": "*"
   },
   "autoload": {
     "psr-4": {
