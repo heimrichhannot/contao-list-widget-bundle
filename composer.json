@@ -16,10 +16,10 @@
     "issues":"https://github.com/heimrichhannot/contao-list-widget-bundle/issues"
   },
   "require": {
-    "php": "^7.2",
+    "php": "^7.2 || ^8.0",
     "ext-json": "*",
     "contao/core-bundle": "^4.4",
-    "symfony/http-kernel": "^3.4|^4.4",
+    "symfony/http-kernel": "^3.4 || ^4.0 || ^5.0",
     "heimrichhannot/contao-request-bundle": "^1.1.1",
     "heimrichhannot/contao-ajax-bundle": "~1.0",
     "heimrichhannot/datatables": "^1.10",
