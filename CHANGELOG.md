@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.2.0] - 2022-03-04
+## [1.1.0] - 2022-03-04
 - Changed: allow php 8
 - Changed: allow symfony/kernel 5
 
