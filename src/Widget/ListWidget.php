@@ -6,12 +6,15 @@ namespace HeimrichHannot\ListWidgetBundle\Widget;
 use Contao\BackendTemplate;
 use Contao\Controller;
 use Contao\Database;
+use Contao\Input;
 use Contao\Model;
 use Contao\RequestToken;
 use Contao\System;
+use Contao\Template;
 use Contao\Widget;
 use HeimrichHannot\AjaxBundle\Response\ResponseData;
 use HeimrichHannot\AjaxBundle\Response\ResponseSuccess;
+use HeimrichHannot\UtilsBundle\Util\Utils;
 
 class ListWidget extends Widget
 {
@@ -151,20 +154,41 @@ class ListWidget extends Widget
         }
     }
 
-    public static function addToTemplate($objTemplate, array $arrConfig)
+    /**
+     * Add widget setup to template
+     *
+     * Configuration:
+     * - loadAssets: (bool) Load assets (default: true)
+     */
+    public static function addToTemplate(Template $objTemplate, array $configuration): void
     {
-        $objTemplate->class        = $arrConfig['class'];
-        $objTemplate->ajax         = $arrConfig['ajax'];
-        $objTemplate->headerFields = $arrConfig['headerFields'];
-        $objTemplate->columnDefs   = htmlentities(json_encode(static::getColumnDefsData($arrConfig['columns'])));
-        $objTemplate->language     = htmlentities(json_encode($arrConfig['language']));
+        $configuration = array_merge([
+            'loadAssets' => true,
+        ], $configuration);
 
-        if ($arrConfig['ajax']) {
-            $objTemplate->processingAction = System::getContainer()->get('huh.utils.url')->addQueryString(
-                'key=' . static::LOAD_ACTION . '&scope=' . $arrConfig['identifier'] . '&rt=' . RequestToken::get()
+        $objTemplate->class        = $configuration['class'];
+        $objTemplate->ajax         = $configuration['ajax'];
+        $objTemplate->headerFields = $configuration['headerFields'];
+        $objTemplate->columnDefs   = htmlentities(json_encode(static::getColumnDefsData($configuration['columns'])));
+        $objTemplate->language     = htmlentities(json_encode($configuration['language']));
+
+        if ($configuration['ajax']) {
+            $objTemplate->processingAction = System::getContainer()->get(Utils::class)->url()->addQueryStringParameterToUrl(
+                    'key=' . static::LOAD_ACTION . '&scope=' . $configuration['identifier'] . '&rt=' . RequestToken::get()
             );
         } else {
-            $objTemplate->items = $arrConfig['items'];
+            $objTemplate->items = $configuration['items'];
+        }
+
+        if ($configuration['loadAssets']) {
+            $GLOBALS['TL_JAVASCRIPT']['datatables-i18n']       = 'assets/datatables-additional/datatables-i18n/datatables-i18n.min.js';
+            $GLOBALS['TL_JAVASCRIPT']['datatables-core']       = 'assets/datatables/datatables/media/js/jquery.dataTables.min.js';
+            $GLOBALS['TL_JAVASCRIPT']['datatables-rowReorder'] = 'assets/datatables-additional/datatables-RowReorder/js/dataTables.rowReorder.min.js';
+
+            $GLOBALS['TL_JAVASCRIPT']['jquery.list_widget.js'] = 'bundles/heimrichhannotlistwidget/assets/js/jquery.list_widget.js';
+
+            $GLOBALS['TL_CSS']['datatables-core']       = 'assets/datatables-additional/datatables.net-dt/css/jquery.dataTables.min.css';
+            $GLOBALS['TL_CSS']['datatables-rowReorder'] = 'assets/datatables-additional/datatables-RowReorder/css/rowReorder.dataTables.min.css';
         }
     }
 
