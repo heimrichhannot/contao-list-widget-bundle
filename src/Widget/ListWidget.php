@@ -69,6 +69,12 @@ class ListWidget extends Widget
 
     public static function prepareConfig($arrConfig = [], $objContext = null, $objDca = null)
     {
+        $arrConfig = array_merge([
+            'useDbAsHeader' => false,
+            'table' => null,
+            'ajax' => false,
+        ], $arrConfig);
+
         $dcaUtil                   = System::getContainer()->get('huh.utils.dca');
 
         $arrConfig = $arrConfig ?: [];
@@ -164,6 +170,11 @@ class ListWidget extends Widget
     {
         $configuration = array_merge([
             'loadAssets' => true,
+            'class' => '',
+            'ajax' => false,
+            'headerFields' => [],
+            'columns' => [],
+            'language' => '',
         ], $configuration);
 
         $objTemplate->class        = $configuration['class'];
@@ -396,7 +407,7 @@ class ListWidget extends Widget
                 $column        = $columns[$columnIdx];
                 $str           = $requestColumn['search']['value'];
 
-                if (!$column['db']) {
+                if (!($column['db'] ?? null)) {
                     continue;
                 }
 

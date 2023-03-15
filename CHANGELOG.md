@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.1] - 2022-03-15
+- Fixed: array index issues
+
 ## [1.2.0] - 2022-03-04
 - Changed: load assets only on pages where widget is used
 - Fixed: deprecation warning
