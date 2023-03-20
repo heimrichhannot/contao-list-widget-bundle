@@ -44,7 +44,7 @@ class ListWidget extends Widget
      */
     public function generate()
     {
-        $objTemplate = new BackendTemplate($this->arrDca['template'] ?: $this->strListTemplate);
+        $objTemplate = new BackendTemplate($this->arrDca['template'] ?? $this->strListTemplate);
 
         $arrConfig = $this->arrDca;
 
@@ -285,38 +285,48 @@ class ListWidget extends Widget
     /**
      * Count the total matching items
      *
-     * @param array $arrOptions
+     * @param array $options
      * @return int
      */
-    protected static function countTotal(array $arrOptions)
+    protected static function countTotal(array $options): int
     {
-        $strModel = Model::getClassFromTable($arrOptions['table']);
+        $options = array_merge([
+            'column' => [],
+            'value' => [],
+        ], $options);
 
-        if (isset($arrOptions['column'])) {
-            return $strModel::countBy($arrOptions['column'], $arrOptions['value'], $arrOptions);
+        $modelClass = Model::getClassFromTable($options['table']);
+
+        if (isset($options['column'])) {
+            return $modelClass::countBy($options['column'], $options['value'], $options);
         } else {
-            return $strModel::countAll();
+            return $modelClass::countAll();
         }
     }
 
     /**
      * Count the filtered items
      *
-     * @param  array $arrOptions SQL options
+     * @param  array $options SQL options
      *
      * @return integer
      */
-    protected static function countFiltered($arrOptions)
+    protected static function countFiltered(array $options): int
     {
-        unset($arrOptions['limit']);
-        unset($arrOptions['offset']);
+        unset($options['limit']);
+        unset($options['offset']);
 
-        $strModel = Model::getClassFromTable($arrOptions['table']);
+        $options = array_merge([
+            'column' => [],
+            'value' => [],
+        ], $options);
 
-        if (isset($arrOptions['column'])) {
-            return $strModel::countBy($arrOptions['column'], $arrOptions['value'], $arrOptions);
+        $modelClass = Model::getClassFromTable($options['table']);
+
+        if (isset($options['column'])) {
+            return $modelClass::countBy($options['column'], $options['value'], $options);
         } else {
-            return $strModel::countAll();
+            return $modelClass::countAll();
         }
     }
 
