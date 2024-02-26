@@ -2,9 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0@alpha] - 2024-02-26
+- Added: Support for Contao 5
+- Removed: Support for Contao 4.9
+- Removed: Support for PHP<8.2
+
 ## [1.2.2] - 2022-03-20
 - Fixed: issues with php 8
-- 
+
 ## [1.2.1] - 2022-03-15
 - Fixed: array index issues
 
