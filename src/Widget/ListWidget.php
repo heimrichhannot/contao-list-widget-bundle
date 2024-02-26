@@ -8,7 +8,6 @@ use Contao\Controller;
 use Contao\Database;
 use Contao\Input;
 use Contao\Model;
-use Contao\RequestToken;
 use Contao\System;
 use Contao\Template;
 use Contao\Widget;
@@ -19,30 +18,27 @@ use HeimrichHannot\UtilsBundle\Util\Utils;
 class ListWidget extends Widget
 {
     const LOAD_ACTION = 'list-load';
+    const SKIP_FIELDS = ['id', 'tstamp', 'pid', 'dateAdded'];
 
     protected $blnForAttribute = true;
     protected $strTemplate = 'be_widget';
-    protected $strListTemplate = 'list_widget';
-    protected $arrDca;
-    protected $arrWidgetErrors = [];
-
-    protected static $arrSkipFields = ['id', 'tstamp', 'pid', 'dateAdded'];
+    protected string $strListTemplate = 'list_widget';
+    protected array $arrDca;
 
     public function __construct($arrData)
     {
         Controller::loadDataContainer($arrData['strTable']);
-        $this->arrDca = $GLOBALS['TL_DCA'][$arrData['strTable']]['fields'][$arrData['strField']]['eval']['listWidget'];
+        $this->arrDca = $GLOBALS['TL_DCA'][$arrData['strTable']]['fields'][$arrData['strField']]['eval']['listWidget'] ?? [];
 
         parent::__construct($arrData);
     }
-
 
     /**
      * Generate the widget and return it as string
      *
      * @return string
      */
-    public function generate()
+    public function generate(): string
     {
         $objTemplate = new BackendTemplate($this->arrDca['template'] ?? $this->strListTemplate);
 
@@ -75,12 +71,10 @@ class ListWidget extends Widget
             'ajax' => false,
         ], $arrConfig);
 
-        $dcaUtil                   = System::getContainer()->get('huh.utils.dca');
-
         $arrConfig = $arrConfig ?: [];
 
         // header
-        $arrConfig['headerFields'] = $dcaUtil->getConfigByArrayOrCallbackOrFunction($arrConfig, 'header_fields', [$arrConfig, $objContext, $objDca]);
+        $arrConfig['headerFields'] = Polyfill::utilsV2_dcaUtil_getConfigByArrayOrCallbackOrFunction($arrConfig, 'header_fields', [$arrConfig, $objContext, $objDca]);
 
         if ($arrConfig['useDbAsHeader'] && $arrConfig['table']) {
             $strTable        = $arrConfig['table'];
@@ -88,23 +82,23 @@ class ListWidget extends Widget
             $arrHeaderFields = [];
 
             foreach ($arrFields as $strField) {
-                if (in_array($strField, static::$arrSkipFields)) {
+                if (in_array($strField, static::SKIP_FIELDS)) {
                     continue;
                 }
 
-                $arrHeaderFields[$strField] = $dcaUtil->getLocalizedFieldname($strField, $strTable);
+                $arrHeaderFields[$strField] = Polyfill::utilsV2_dcaUtil_getLocalizedFieldName($strField, $strTable);
             }
 
             $arrConfig['headerFields'] = $arrHeaderFields;
         }
 
         if (!$arrConfig['ajax']) {
-            $arrConfig['items'] = $dcaUtil->getConfigByArrayOrCallbackOrFunction($arrConfig, 'items', [$arrConfig, $objContext, $objDca]);
+            $arrConfig['items'] = Polyfill::utilsV2_dcaUtil_getConfigByArrayOrCallbackOrFunction($arrConfig, 'items', [$arrConfig, $objContext, $objDca]);
         }
 
-        $arrConfig['language'] = $dcaUtil->getConfigByArrayOrCallbackOrFunction($arrConfig, 'language', [$arrConfig, $objContext, $objDca]);
+        $arrConfig['language'] = Polyfill::utilsV2_dcaUtil_getConfigByArrayOrCallbackOrFunction($arrConfig, 'language', [$arrConfig, $objContext, $objDca]);
 
-        $arrConfig['columns'] = $dcaUtil->getConfigByArrayOrCallbackOrFunction($arrConfig, 'columns', [$arrConfig, $objContext, $objDca]);
+        $arrConfig['columns'] = Polyfill::utilsV2_dcaUtil_getConfigByArrayOrCallbackOrFunction($arrConfig, 'columns', [$arrConfig, $objContext, $objDca]);
 
         // prepare columns -> if not specified, get it from header fields
         if (!$arrConfig['columns']) {
@@ -129,35 +123,40 @@ class ListWidget extends Widget
         return $arrConfig;
     }
 
-
-    public static function initAjaxLoading(array $arrConfig, $objContext = null, $objDc = null)
+    public static function initAjaxLoading(array $arrConfig, $objContext = null, $objDc = null): void
     {
-        $request = System::getContainer()->get('huh.request');
+        $request = System::getContainer()->get('request_stack')->getCurrentRequest();
         $dcaUtil = System::getContainer()->get('huh.utils.dca');
 
-        if (!$request->isXmlHttpRequest()) {
+        if ($request->headers->get('X-Requested-With') !== 'XMLHttpRequest') {
             return;
         }
 
-        if ($request->getGet('key') == ListWidget::LOAD_ACTION && $request->getGet('scope') == $arrConfig['identifier']) {
-            $objResponse = new ResponseSuccess();
-
-            // start loading
-            if (!isset($arrConfig['ajaxConfig']['load_items_callback'])) {
-                $arrConfig['ajaxConfig']['load_items_callback'] = function () use ($arrConfig, $objContext, $objDc) {
-                    return self::loadItems($arrConfig, [], $objContext, $objDc);
-                };
-            }
-
-            $strResult = $dcaUtil->getConfigByArrayOrCallbackOrFunction(
-                $arrConfig['ajaxConfig'],
-                'load_items',
-                [$arrConfig, [], $objContext, $objDc]
-            );
-
-            $objResponse->setResult(new ResponseData('', $strResult));
-            $objResponse->output();
+        if (Input::get('key') !== static::LOAD_ACTION) {
+            return;
         }
+
+        if (Input::get('scope') !== $arrConfig['identifier']) {
+            return;
+        }
+
+        $objResponse = new ResponseSuccess();
+
+        // start loading
+        if (!isset($arrConfig['ajaxConfig']['load_items_callback'])) {
+            $arrConfig['ajaxConfig']['load_items_callback'] = function () use ($arrConfig, $objContext, $objDc) {
+                return self::loadItems($arrConfig, [], $objContext, $objDc);
+            };
+        }
+
+        $strResult = $dcaUtil->getConfigByArrayOrCallbackOrFunction(
+            $arrConfig['ajaxConfig'],
+            'load_items',
+            [$arrConfig, [], $objContext, $objDc]
+        );
+
+        $objResponse->setResult(new ResponseData('', $strResult));
+        $objResponse->output();
     }
 
     /**
@@ -183,11 +182,15 @@ class ListWidget extends Widget
         $objTemplate->columnDefs   = htmlentities(json_encode(static::getColumnDefsData($configuration['columns'])));
         $objTemplate->language     = htmlentities(json_encode($configuration['language']));
 
-        if ($configuration['ajax']) {
-            $objTemplate->processingAction = System::getContainer()->get(Utils::class)->url()->addQueryStringParameterToUrl(
-                    'key=' . static::LOAD_ACTION . '&scope=' . $configuration['identifier'] . '&rt=' . RequestToken::get()
-            );
-        } else {
+        if ($configuration['ajax'])
+        {
+            $requestToken = System::getContainer()->get('contao.csrf.token_manager')->getDefaultTokenValue();
+            $queryString = sprintf('key=%s&scope=%s&rt=%s', static::LOAD_ACTION, $configuration['identifier'], $requestToken);
+            $utils = System::getContainer()->get(Utils::class);
+            $objTemplate->processingAction = $utils->url()->addQueryStringParameterToUrl($queryString);
+        }
+        else
+        {
             $objTemplate->items = $configuration['items'];
         }
 
@@ -203,10 +206,8 @@ class ListWidget extends Widget
         }
     }
 
-    public static function loadItems($arrConfig, $arrOptions = [], $objContext = null, $objDc = null)
+    public static function loadItems($arrConfig, $arrOptions = [], $objContext = null, $objDc = null): array
     {
-        $request = System::getContainer()->get('huh.request');
-
         $arrOptions = !empty($arrOptions)
             ? $arrOptions
             : [
@@ -216,7 +217,8 @@ class ListWidget extends Widget
 
         $objItems                       = static::fetchItems($arrOptions);
         $arrResponse                    = [];
-        $arrResponse['draw']            = $request->hasGet('draw') ? intval($request->getGet('draw')) : 0;
+        $getDraw                        = Input::get('draw');
+        $arrResponse['draw']            = ($getDraw && is_string($getDraw)) ? intval($getDraw) : 0;
         $arrResponse['recordsTotal']    = intval(static::countTotal($arrOptions));
         $arrResponse['recordsFiltered'] = intval(static::countFiltered($arrOptions));
 
@@ -295,6 +297,7 @@ class ListWidget extends Widget
             'value' => [],
         ], $options);
 
+        /** @var class-string<Model> $modelClass */
         $modelClass = Model::getClassFromTable($options['table']);
 
         if (isset($options['column'])) {
@@ -321,6 +324,7 @@ class ListWidget extends Widget
             'value' => [],
         ], $options);
 
+        /** @var class-string<Model> $modelClass */
         $modelClass = Model::getClassFromTable($options['table']);
 
         if (isset($options['column'])) {
@@ -343,6 +347,7 @@ class ListWidget extends Widget
         $arrOptions = static::filterSQL($arrOptions);
         $arrOptions = static::orderSQL($arrOptions);
 
+        /** @var class-string<Model> $modelClass */
         $strModel = Model::getClassFromTable($arrOptions['table']);
 
         return $strModel::findAll($arrOptions);
@@ -359,10 +364,11 @@ class ListWidget extends Widget
      */
     protected static function limitSQL($arrOptions)
     {
-        $request = System::getContainer()->get('huh.request');
-        if ($request->hasGet('start') && $request->getGet('length') != -1) {
-            $arrOptions['limit']  = $request->getGet('length');
-            $arrOptions['offset'] = $request->getGet('start');
+        $start = Input::get('start');
+        $length = Input::get('length');
+        if ($start && $length != -1) {
+            $arrOptions['offset'] = $start;
+            $arrOptions['limit']  = $length;
         }
 
         return $arrOptions;
@@ -383,24 +389,26 @@ class ListWidget extends Widget
      */
     protected static function filterSQL($arrOptions)
     {
-        $request = System::getContainer()->get('huh.request');
-
         $t = $arrOptions['table'];
 
         $columns      = $arrOptions['columns'];
         $globalSearch = [];
         $columnSearch = [];
         $dtColumns    = self::pluck($columns, 'dt');
-        $request      = $request->query->all();
 
-        if (isset($request['search']) && $request['search']['value'] != '') {
-            $str = $request['search']['value'];
-            for ($i = 0, $ien = count($request['columns']); $i < $ien; $i++) {
-                $requestColumn = $request['columns'][$i];
+        $search = Input::get('search');
+        $getColumns = Input::get('columns');
+        $getColumns = is_array($getColumns) ? $getColumns : [];
+
+        if ($search && is_array($search) && ($str = $search['value']) != '')
+        {
+            for ($i = 0, $ien = count($getColumns); $i < $ien; $i++)
+            {
+                $requestColumn = $getColumns[$i];
                 $columnIdx     = array_search($requestColumn['data'], $dtColumns);
                 $column        = $columns[$columnIdx];
 
-                if (!$column['db']) {
+                if (!($column['db'] ?? null)) {
                     continue;
                 }
 
@@ -410,12 +418,14 @@ class ListWidget extends Widget
             }
         }
         // Individual column filtering
-        if (isset($request['columns'])) {
-            for ($i = 0, $ien = count($request['columns']); $i < $ien; $i++) {
-                $requestColumn = $request['columns'][$i];
+        if (!empty($getColumns))
+        {
+            for ($i = 0, $ien = count($getColumns); $i < $ien; $i++)
+            {
+                $requestColumn = $getColumns[$i];
                 $columnIdx     = array_search($requestColumn['data'], $dtColumns);
                 $column        = $columns[$columnIdx];
-                $str           = $requestColumn['search']['value'];
+                $str           = $requestColumn['search']['value'] ?? null;
 
                 if (!($column['db'] ?? null)) {
                     continue;
@@ -458,47 +468,56 @@ class ListWidget extends Widget
      *
      * Construct the ORDER BY clause for server-side processing SQL query
      *
-     * @param  array $arrOptions SQL options
+     * @param array $arrOptions SQL options
      *
      * @return array The $arrOptions filled with order conditions
      */
-    protected static function orderSQL($arrOptions)
+    protected static function orderSQL(array $arrOptions): array
     {
-        $request = System::getContainer()->get('huh.request');
-
         $t       = $arrOptions['table'];
-        $request = $request->query->all();
         $columns = $arrOptions['columns'];
 
-        if (isset($request['order']) && count($request['order'])) {
-            $orderBy   = [];
-            $dtColumns = static::pluck($columns, 'dt');
-            for ($i = 0, $ien = count($request['order']); $i < $ien; $i++) {
-                // Convert the column index into the column data property
-                $columnIdx     = intval($request['order'][$i]['column']);
-                $requestColumn = $request['columns'][$columnIdx];
-                $columnIdx     = array_search($requestColumn['data'], $dtColumns);
-                $column        = $columns[$columnIdx];
+        $getOrder = Input::get('order');
+        $getColumns = Input::get('columns');
 
-                if (!$column['db']) {
-                    continue;
-                }
+        if (!is_array($getOrder) || !$getOrder || $getColumns === null) {
+            return $arrOptions;
+        }
 
-                if ($requestColumn['orderable'] == 'true') {
-                    $dir = $request['order'][$i]['dir'] === 'asc' ? 'ASC' : 'DESC';
+        $orderBy   = [];
+        $dtColumns = static::pluck($columns, 'dt');
+        for ($i = 0, $ien = count($getOrder); $i < $ien; $i++)
+        {
+            // Convert the column index into the column data property
+            $columnIdx = intval($getOrder[$i]['column']);
+            $requestColumn = $getColumns[$columnIdx] ?? null;
 
-                    if ($column['name'] == 'transport') {
-                        $orderBy[] = "GREATEST($t." . $column['db'] . ", $t.transportTime) " . $dir;
-                    } else {
-                        $orderBy[] = "$t." . $column['db'] . " " . $dir;
-                    }
-
-                }
+            if ($requestColumn === null) {
+                continue;
             }
 
-            if ($orderBy) {
-                $arrOptions['order'] = implode(', ', $orderBy);
+            $columnIdx = array_search($requestColumn['data'], $dtColumns);
+            $column = $columns[$columnIdx] ?? null;
+
+            if (!($column['db'] ?? null)) {
+                continue;
             }
+
+            if ($requestColumn['orderable'] == 'true')
+            {
+                $dir = ($getOrder[$i]['dir'] ?? 'desc') === 'asc' ? 'ASC' : 'DESC';
+
+                if ($column['name'] == 'transport') {
+                    $orderBy[] = "GREATEST($t." . $column['db'] . ", $t.transportTime) " . $dir;
+                } else {
+                    $orderBy[] = "$t." . $column['db'] . " " . $dir;
+                }
+
+            }
+        }
+
+        if ($orderBy) {
+            $arrOptions['order'] = implode(', ', $orderBy);
         }
 
         return $arrOptions;
@@ -509,16 +528,16 @@ class ListWidget extends Widget
      * Pull a particular property from each assoc. array in a numeric array,
      * returning and array of the property values from each item.
      *
-     * @param  array $a Array to get data from
-     * @param  string $prop Property to read
+     * @param array $data Array to get data from
+     * @param string $property Property to read
      *
      * @return array        Array of property values
      */
-    protected static function pluck($a, $prop)
+    protected static function pluck(array $data, string $property): array
     {
         $out = [];
-        for ($i = 0, $len = count($a); $i < $len; $i++) {
-            $out[] = $a[$i][$prop];
+        for ($i = 0, $len = count($data); $i < $len; $i++) {
+            $out[] = $data[$i][$property];
         }
 
         return $out;
