@@ -11,8 +11,10 @@ use Contao\Model;
 use Contao\System;
 use Contao\Template;
 use Contao\Widget;
+use HeimrichHannot\AjaxBundle\Exception\AjaxExitException;
 use HeimrichHannot\AjaxBundle\Response\ResponseData;
 use HeimrichHannot\AjaxBundle\Response\ResponseSuccess;
+use HeimrichHannot\UtilsBundle\Util\ArrayUtil;
 use HeimrichHannot\UtilsBundle\Util\Utils;
 
 class ListWidget extends Widget
@@ -37,6 +39,7 @@ class ListWidget extends Widget
      * Generate the widget and return it as string
      *
      * @return string
+     * @throws AjaxExitException
      */
     public function generate(): string
     {
@@ -55,7 +58,6 @@ class ListWidget extends Widget
                 $this,
                 $this->objDca
             );
-
         }
 
         static::addToTemplate($objTemplate, $arrConfig);
@@ -74,7 +76,7 @@ class ListWidget extends Widget
         $arrConfig = $arrConfig ?: [];
 
         // header
-        $arrConfig['headerFields'] = Polyfill::utilsV2_dcaUtil_getConfigByArrayOrCallbackOrFunction($arrConfig, 'header_fields', [$arrConfig, $objContext, $objDca]);
+        $arrConfig['headerFields'] = Polyfill::getConfigByArrayOrCallbackOrFunction($arrConfig, 'header_fields', [$arrConfig, $objContext, $objDca]);
 
         if ($arrConfig['useDbAsHeader'] && $arrConfig['table']) {
             $strTable        = $arrConfig['table'];
@@ -86,19 +88,19 @@ class ListWidget extends Widget
                     continue;
                 }
 
-                $arrHeaderFields[$strField] = Polyfill::utilsV2_dcaUtil_getLocalizedFieldName($strField, $strTable);
+                $arrHeaderFields[$strField] = Polyfill::getLocalizedFieldName($strField, $strTable);
             }
 
             $arrConfig['headerFields'] = $arrHeaderFields;
         }
 
         if (!$arrConfig['ajax']) {
-            $arrConfig['items'] = Polyfill::utilsV2_dcaUtil_getConfigByArrayOrCallbackOrFunction($arrConfig, 'items', [$arrConfig, $objContext, $objDca]);
+            $arrConfig['items'] = Polyfill::getConfigByArrayOrCallbackOrFunction($arrConfig, 'items', [$arrConfig, $objContext, $objDca]);
         }
 
-        $arrConfig['language'] = Polyfill::utilsV2_dcaUtil_getConfigByArrayOrCallbackOrFunction($arrConfig, 'language', [$arrConfig, $objContext, $objDca]);
+        $arrConfig['language'] = Polyfill::getConfigByArrayOrCallbackOrFunction($arrConfig, 'language', [$arrConfig, $objContext, $objDca]);
 
-        $arrConfig['columns'] = Polyfill::utilsV2_dcaUtil_getConfigByArrayOrCallbackOrFunction($arrConfig, 'columns', [$arrConfig, $objContext, $objDca]);
+        $arrConfig['columns'] = Polyfill::getConfigByArrayOrCallbackOrFunction($arrConfig, 'columns', [$arrConfig, $objContext, $objDca]);
 
         // prepare columns -> if not specified, get it from header fields
         if (!$arrConfig['columns']) {
@@ -123,10 +125,12 @@ class ListWidget extends Widget
         return $arrConfig;
     }
 
+    /**
+     * @throws AjaxExitException
+     */
     public static function initAjaxLoading(array $arrConfig, $objContext = null, $objDc = null): void
     {
         $request = System::getContainer()->get('request_stack')->getCurrentRequest();
-        $dcaUtil = System::getContainer()->get('huh.utils.dca');
 
         if ($request->headers->get('X-Requested-With') !== 'XMLHttpRequest') {
             return;
@@ -149,7 +153,7 @@ class ListWidget extends Widget
             };
         }
 
-        $strResult = $dcaUtil->getConfigByArrayOrCallbackOrFunction(
+        $strResult = Polyfill::getConfigByArrayOrCallbackOrFunction(
             $arrConfig['ajaxConfig'],
             'load_items',
             [$arrConfig, [], $objContext, $objDc]
@@ -219,8 +223,8 @@ class ListWidget extends Widget
         $arrResponse                    = [];
         $getDraw                        = Input::get('draw');
         $arrResponse['draw']            = ($getDraw && is_string($getDraw)) ? intval($getDraw) : 0;
-        $arrResponse['recordsTotal']    = intval(static::countTotal($arrOptions));
-        $arrResponse['recordsFiltered'] = intval(static::countFiltered($arrOptions));
+        $arrResponse['recordsTotal']    = static::countTotal($arrOptions);
+        $arrResponse['recordsFiltered'] = static::countFiltered($arrOptions);
 
         // prepare
         if (!isset($arrConfig['ajaxConfig']['prepare_items_callback'])) {
@@ -229,7 +233,7 @@ class ListWidget extends Widget
             };
         }
 
-        $arrResponse['data'] = System::getContainer()->get('huh.utils.dca')->getConfigByArrayOrCallbackOrFunction(
+        $arrResponse['data'] = Polyfill::getConfigByArrayOrCallbackOrFunction(
             $arrConfig['ajaxConfig'],
             'prepare_items',
             [
@@ -268,14 +272,13 @@ class ListWidget extends Widget
         return $arrItems;
     }
 
-    protected static function getColumnDefsData($arrColumns)
+    protected static function getColumnDefsData($arrColumns): array
     {
-        $arrayUtil = System::getContainer()->get('huh.utils.array');
+        $prefixes = ['searchable', 'className', 'orderable', 'type'];
         $arrConfig = [];
-
-        foreach ($arrColumns as $i => $arrColumn) {
+        foreach ($arrColumns as $arrColumn) {
             $arrConfig[] = array_merge(
-                $arrayUtil->filterByPrefixes($arrColumn, ['searchable', 'className', 'orderable', 'type']),
+                Polyfill::filterByPrefixes($arrColumn, $prefixes),
                 ['targets' => $arrColumn['dt']],
                 ['render' => ['_' => 'value']]
             );
@@ -337,20 +340,20 @@ class ListWidget extends Widget
     /**
      * Fetch the matching items
      *
-     * @param  array $arrOptions SQL options
+     * @param array $arrOptions SQL options
      *
      * @return array          Server-side processing response array
      */
-    protected static function fetchItems(&$arrOptions = [])
+    protected static function fetchItems(array &$arrOptions = []): array
     {
         $arrOptions = static::limitSQL($arrOptions);
         $arrOptions = static::filterSQL($arrOptions);
         $arrOptions = static::orderSQL($arrOptions);
 
         /** @var class-string<Model> $modelClass */
-        $strModel = Model::getClassFromTable($arrOptions['table']);
+        $modelClass = Model::getClassFromTable($arrOptions['table']);
 
-        return $strModel::findAll($arrOptions);
+        return $modelClass::findAll($arrOptions);
     }
 
     /**
@@ -358,11 +361,11 @@ class ListWidget extends Widget
      *
      * Construct the LIMIT clause for server-side processing SQL query
      *
-     * @param  array $arrOptions SQL options
+     * @param array $arrOptions SQL options
      *
      * @return array The $arrOptions filled with limit clause
      */
-    protected static function limitSQL($arrOptions)
+    protected static function limitSQL(array $arrOptions): array
     {
         $start = Input::get('start');
         $length = Input::get('length');
@@ -383,11 +386,11 @@ class ListWidget extends Widget
      * word by word on any field. It's possible to do here performance on large
      * databases would be very poor
      *
-     * @param  array $arrOptions SQL options
+     * @param array $arrOptions SQL options
      *
      * @return array The $arrOptions filled with where conditions (values and columns)
      */
-    protected static function filterSQL($arrOptions)
+    protected static function filterSQL(array $arrOptions): array
     {
         $t = $arrOptions['table'];
 
