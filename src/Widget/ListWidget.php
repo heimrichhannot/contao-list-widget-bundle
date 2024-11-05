@@ -134,7 +134,7 @@ class ListWidget extends Widget
     }
 
 
-    public static function initAjaxLoading(array $arrConfig, $objContext = null, $objDc = null)
+    public static function initAjaxLoading(array $arrConfig, $objContext = null, $objDc = null): void
     {
         $request = System::getContainer()->get('huh.request');
         $dcaUtil = System::getContainer()->get('huh.utils.dca');
@@ -148,9 +148,7 @@ class ListWidget extends Widget
 
             // start loading
             if (!isset($arrConfig['ajaxConfig']['load_items_callback'])) {
-                $arrConfig['ajaxConfig']['load_items_callback'] = function () use ($arrConfig, $objContext, $objDc) {
-                    return self::loadItems($arrConfig, [], $objContext, $objDc);
-                };
+                $arrConfig['ajaxConfig']['load_items_callback'] = fn() => self::loadItems($arrConfig, [], $objContext, $objDc);
             }
 
             $strResult = $dcaUtil->getConfigByArrayOrCallbackOrFunction(
@@ -200,7 +198,7 @@ class ListWidget extends Widget
                 );
             } else {
                 $objTemplate->processingAction = System::getContainer()->get(Utils::class)->url()->addQueryStringParameterToUrl(
-                    'key=' . static::LOAD_ACTION . '&scope=' . $configuration['identifier'] . '&rt=' . RequestToken::get());
+                    'key=' . static::LOAD_ACTION . '&scope=' . $configuration['identifier'] . '&rt=' . \Contao\System::getContainer()->get('contao.csrf.token_manager')->getDefaultTokenValue());
             }
         } else {
             $objTemplate->items = $configuration['items'];
@@ -237,9 +235,7 @@ class ListWidget extends Widget
 
         // prepare
         if (!isset($arrConfig['ajaxConfig']['prepare_items_callback'])) {
-            $arrConfig['ajaxConfig']['prepare_items_callback'] = function () use ($objItems, $arrConfig, $arrOptions, $objContext, $objDc) {
-                return self::prepareItems($objItems, $arrConfig, $arrOptions, $objContext, $objDc);
-            };
+            $arrConfig['ajaxConfig']['prepare_items_callback'] = fn() => self::prepareItems($objItems, $arrConfig, $arrOptions, $objContext, $objDc);
         }
 
         $arrResponse['data'] = System::getContainer()->get('huh.utils.dca')->getConfigByArrayOrCallbackOrFunction(
