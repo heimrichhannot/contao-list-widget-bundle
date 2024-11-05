@@ -2,6 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0] - 2022-03-20
 ## [1.2.2] - 2022-03-20
 - Fixed: issues with php 8
 - 

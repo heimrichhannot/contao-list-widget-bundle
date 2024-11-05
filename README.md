@@ -17,9 +17,9 @@ For visualization the javascript library [DataTables](https://github.com/DataTab
   - sort the table
 - support for ajax reloading data using datatables -> currently only working for contao models since SQL-commands like LIMIT are used
 
-### Technical instructions
+## Technical instructions
 
-#### Usage as a widget in a dca field
+### Usage as a widget in a dca field
 
 Use the inputType "listWidget" for your field.
 
@@ -51,7 +51,7 @@ Use the inputType "listWidget" for your field.
 ]
 ```
 
-#### Usage in a module
+### Usage in a module
 
 Add the following code e.g. in the generate() method of your BackendModule:
 
@@ -85,7 +85,68 @@ ListWidget::addToTemplate($this->Template, static::$arrListOptions);
 
 Copy the content of list_widget.html5 into your module's template.
 
-#### Example load_items_callback
+### Using ajax with custom routes
+
+Since version 1.3 it is possible to use custom routes for ajax requests to have more control or freedom over the returned data.
+Use `ListWidgetContext` class as helper to process the request and return a `ListWidgetResponse` object.
+
+```php
+# /contao/dca/tl_custom.php
+$GLOBALS['TL_DCA']['tl_custom']['fields']['people'] = [
+  'inputType' => 'listWidget',
+  'eval' => [
+      'tl_class' => 'long clr',
+      'listWidget' => [
+          'ajax' => true,
+          'ajaxConfig' => [
+              'route' => 'app_list_widget_people_list',
+          ],
+          'table' => 'tl_custom',
+      ],
+  ],
+];
+
+# /src/Controller/PeopleController.php
+
+use Contao\CoreBundle\Framework\ContaoFramework;
+use Doctrine\Common\Collections\Criteria;
+use HeimrichHannot\ListWidgetBundle\Controller\ListWidgetContext;
+use HeimrichHannot\ListWidgetBundle\Response\ListWidgetResponse;
+use App\People\PeopleFinder;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Annotation\Route;
+
+#[Route('/app/list_widget/people_list', name: 'app_list_widget_people_list', defaults: ['_scope' => 'backend'])]
+class PeopleController
+{
+    public function __construct(
+        private readonly ContaoFramework $framework,
+        private readonly PeopleFinder $people,
+    ) {}
+
+    public function __invoke(Request $request): ListWidgetResponse
+    {
+        $this->framework->initialize();
+        try {
+            $context = ListWidgetContext::createFromRequest($request);
+        } catch (\Exception $e) {
+            return new ListWidgetResponse(1, 0, 0, [], $e->getMessage());
+        }
+
+        $countTotal = $this->people->countByList($context->id);
+        $fields = ['id', 'email', 'firstname', 'lastname'];
+
+        $criteria = new Criteria();
+        $context->applySearchToCriteria($criteria,$fields);
+        $countFiltered = $this->people->countByList($context->id, $criteria);
+        $context->applyListConfigToCriteria($criteria, $fields);
+        $people = $this->people->findByList($context->id, $fields, $criteria);
+        return $context->createResponse($countTotal, $countFiltered, $people);
+    }
+}
+```
+
+### Example load_items_callback
 
 Here you can see an example for overriding the core behavior of loadItems():
 

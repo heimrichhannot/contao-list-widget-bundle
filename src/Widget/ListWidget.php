@@ -18,7 +18,9 @@ use HeimrichHannot\UtilsBundle\Util\Utils;
 
 class ListWidget extends Widget
 {
-    const LOAD_ACTION = 'list-load';
+    public const TYPE = 'listWidget';
+
+    public const LOAD_ACTION = 'list-load';
 
     protected $blnForAttribute = true;
     protected $strTemplate = 'be_widget';
@@ -62,6 +64,8 @@ class ListWidget extends Widget
 
         }
 
+        $arrConfig['ptable'] = $this->strTable;
+        $arrConfig['pid']    = $this->objDca->id;
         static::addToTemplate($objTemplate, $arrConfig);
 
         return $objTemplate->parse();
@@ -183,17 +187,29 @@ class ListWidget extends Widget
         $objTemplate->columnDefs   = htmlentities(json_encode(static::getColumnDefsData($configuration['columns'])));
         $objTemplate->language     = htmlentities(json_encode($configuration['language']));
 
-        if ($configuration['ajax']) {
-            $objTemplate->processingAction = System::getContainer()->get(Utils::class)->url()->addQueryStringParameterToUrl(
-                    'key=' . static::LOAD_ACTION . '&scope=' . $configuration['identifier'] . '&rt=' . RequestToken::get()
-            );
+        if ($configuration['ajax'] ?? false) {
+
+            if ($configuration['ajaxConfig']['route'] ?? false) {
+                $objTemplate->processingAction = System::getContainer()->get('router')->generate(
+                    $configuration['ajaxConfig']['route'],
+                    [
+                        'scope' => $configuration['identifier'],
+                        'table' => $configuration['ptable'],
+                        'id' => $configuration['pid'],
+                    ]
+                );
+            } else {
+                $objTemplate->processingAction = System::getContainer()->get(Utils::class)->url()->addQueryStringParameterToUrl(
+                    'key=' . static::LOAD_ACTION . '&scope=' . $configuration['identifier'] . '&rt=' . RequestToken::get());
+            }
         } else {
             $objTemplate->items = $configuration['items'];
         }
 
         if ($configuration['loadAssets']) {
             $GLOBALS['TL_JAVASCRIPT']['datatables-i18n']       = 'assets/datatables-additional/datatables-i18n/datatables-i18n.min.js';
-            $GLOBALS['TL_JAVASCRIPT']['datatables-core']       = 'assets/datatables/datatables/media/js/jquery.dataTables.min.js';
+//            $GLOBALS['TL_JAVASCRIPT']['datatables-core']       = 'assets/datatables/datatables/media/js/jquery.dataTables.min.js';
+            $GLOBALS['TL_JAVASCRIPT']['datatables-core']       = 'assets/datatables/datatables/media/js/jquery.dataTables.js';
             $GLOBALS['TL_JAVASCRIPT']['datatables-rowReorder'] = 'assets/datatables-additional/datatables-RowReorder/js/dataTables.rowReorder.min.js';
 
             $GLOBALS['TL_JAVASCRIPT']['jquery.list_widget.js'] = 'bundles/heimrichhannotlistwidget/assets/js/jquery.list_widget.js';
