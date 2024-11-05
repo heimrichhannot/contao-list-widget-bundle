@@ -111,7 +111,7 @@ $GLOBALS['TL_DCA']['tl_custom']['fields']['people'] = [
 use Contao\CoreBundle\Framework\ContaoFramework;
 use Doctrine\Common\Collections\Criteria;
 use HeimrichHannot\ListWidgetBundle\Controller\ListWidgetContext;
-use HeimrichHannot\ListWidgetBundle\Response\ListWidgetResponse;
+use HeimrichHannot\ListWidgetBundle\Controller\ListWidgetResponse;
 use App\People\PeopleFinder;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;

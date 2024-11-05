@@ -6,9 +6,7 @@ use Ausi\SlugGenerator\SlugGenerator;
 use Ausi\SlugGenerator\SlugOptions;
 use Contao\Controller;
 use Doctrine\Common\Collections\Criteria;
-use HeimrichHannot\ListWidgetBundle\Response\ListWidgetResponse;
 use HeimrichHannot\ListWidgetBundle\Widget\ListWidget;
-use HeimrichHannot\MailDrumBundle\Model\MailingListModel;
 use Symfony\Component\HttpFoundation\Request;
 
 class ListWidgetContext
