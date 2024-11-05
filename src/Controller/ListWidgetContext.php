@@ -17,8 +17,7 @@ class ListWidgetContext
         public readonly string $id,
         public readonly array $fieldConfig,
         public readonly Request $request,
-    )
-    {
+    ) {
     }
 
     public static function createFromRequest(Request $request): ListWidgetContext
@@ -64,7 +63,9 @@ class ListWidgetContext
 
         if (!empty($this->request->query->get('order'))) {
             foreach ($this->request->query->get('order') as $order) {
-                $criteria->orderBy([$fields[$order['column']] => $order['dir']]);
+                $criteria->orderBy([
+                    $fields[$order['column']] => $order['dir'],
+                ]);
             }
         }
     }
@@ -72,7 +73,9 @@ class ListWidgetContext
     public function adjustDataResultStructure(array &$data): void
     {
         array_walk($data, function (&$date) {
-            $date = array_map(fn($value) => ['value' => $value], array_values($date));
+            $date = array_map(fn($value) => [
+                'value' => $value,
+            ], array_values($date));
         });
     }
 

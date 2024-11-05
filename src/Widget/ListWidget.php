@@ -2,13 +2,10 @@
 
 namespace HeimrichHannot\ListWidgetBundle\Widget;
 
-
 use Contao\BackendTemplate;
 use Contao\Controller;
 use Contao\Database;
-use Contao\Input;
 use Contao\Model;
-use Contao\RequestToken;
 use Contao\System;
 use Contao\Template;
 use Contao\Widget;
@@ -23,9 +20,13 @@ class ListWidget extends Widget
     public const LOAD_ACTION = 'list-load';
 
     protected $blnForAttribute = true;
+
     protected $strTemplate = 'be_widget';
+
     protected $strListTemplate = 'list_widget';
+
     protected $arrDca;
+
     protected $arrWidgetErrors = [];
 
     protected static $arrSkipFields = ['id', 'tstamp', 'pid', 'dateAdded'];
@@ -37,7 +38,6 @@ class ListWidget extends Widget
 
         parent::__construct($arrData);
     }
-
 
     /**
      * Generate the widget and return it as string
@@ -65,7 +65,7 @@ class ListWidget extends Widget
         }
 
         $arrConfig['ptable'] = $this->strTable;
-        $arrConfig['pid']    = $this->objDca->id;
+        $arrConfig['pid'] = $this->objDca->id;
         static::addToTemplate($objTemplate, $arrConfig);
 
         return $objTemplate->parse();
@@ -79,7 +79,7 @@ class ListWidget extends Widget
             'ajax' => false,
         ], $arrConfig);
 
-        $dcaUtil                   = System::getContainer()->get('huh.utils.dca');
+        $dcaUtil = System::getContainer()->get('huh.utils.dca');
 
         $arrConfig = $arrConfig ?: [];
 
@@ -87,8 +87,8 @@ class ListWidget extends Widget
         $arrConfig['headerFields'] = $dcaUtil->getConfigByArrayOrCallbackOrFunction($arrConfig, 'header_fields', [$arrConfig, $objContext, $objDca]);
 
         if ($arrConfig['useDbAsHeader'] && $arrConfig['table']) {
-            $strTable        = $arrConfig['table'];
-            $arrFields       = Database::getInstance()->getFieldNames($strTable, true);
+            $strTable = $arrConfig['table'];
+            $arrFields = Database::getInstance()->getFieldNames($strTable, true);
             $arrHeaderFields = [];
 
             foreach ($arrFields as $strField) {
@@ -114,15 +114,15 @@ class ListWidget extends Widget
         if (!$arrConfig['columns']) {
             if (is_array($arrConfig['headerFields'])) {
                 $arrColumns = [];
-                $i          = 0;
+                $i = 0;
 
                 foreach ($arrConfig['headerFields'] as $strField => $strLabel) {
                     $arrColumns[] = [
-                        'name'       => $strLabel,
-                        'db'         => $strField,
-                        'dt'         => $i++,
+                        'name' => $strLabel,
+                        'db' => $strField,
+                        'dt' => $i++,
                         'searchable' => true,
-                        'className'  => is_numeric($strField) ? 'col_' . $strField : $strField,
+                        'className' => is_numeric($strField) ? 'col_' . $strField : $strField,
                     ];
                 }
 
@@ -132,7 +132,6 @@ class ListWidget extends Widget
 
         return $arrConfig;
     }
-
 
     public static function initAjaxLoading(array $arrConfig, $objContext = null, $objDc = null): void
     {
@@ -179,11 +178,11 @@ class ListWidget extends Widget
             'language' => '',
         ], $configuration);
 
-        $objTemplate->class        = $configuration['class'];
-        $objTemplate->ajax         = $configuration['ajax'];
+        $objTemplate->class = $configuration['class'];
+        $objTemplate->ajax = $configuration['ajax'];
         $objTemplate->headerFields = $configuration['headerFields'];
-        $objTemplate->columnDefs   = htmlentities(json_encode(static::getColumnDefsData($configuration['columns'])));
-        $objTemplate->language     = htmlentities(json_encode($configuration['language']));
+        $objTemplate->columnDefs = htmlentities(json_encode(static::getColumnDefsData($configuration['columns'])));
+        $objTemplate->language = htmlentities(json_encode($configuration['language']));
 
         if ($configuration['ajax'] ?? false) {
 
@@ -198,20 +197,21 @@ class ListWidget extends Widget
                 );
             } else {
                 $objTemplate->processingAction = System::getContainer()->get(Utils::class)->url()->addQueryStringParameterToUrl(
-                    'key=' . static::LOAD_ACTION . '&scope=' . $configuration['identifier'] . '&rt=' . \Contao\System::getContainer()->get('contao.csrf.token_manager')->getDefaultTokenValue());
+                    'key=' . static::LOAD_ACTION . '&scope=' . $configuration['identifier'] . '&rt=' . \Contao\System::getContainer()->get('contao.csrf.token_manager')->getDefaultTokenValue()
+                );
             }
         } else {
             $objTemplate->items = $configuration['items'];
         }
 
         if ($configuration['loadAssets']) {
-            $GLOBALS['TL_JAVASCRIPT']['datatables-i18n']       = 'assets/datatables-additional/datatables-i18n/datatables-i18n.min.js';
-            $GLOBALS['TL_JAVASCRIPT']['datatables-core']       = 'assets/datatables/datatables/media/js/jquery.dataTables.min.js';
+            $GLOBALS['TL_JAVASCRIPT']['datatables-i18n'] = 'assets/datatables-additional/datatables-i18n/datatables-i18n.min.js';
+            $GLOBALS['TL_JAVASCRIPT']['datatables-core'] = 'assets/datatables/datatables/media/js/jquery.dataTables.min.js';
             $GLOBALS['TL_JAVASCRIPT']['datatables-rowReorder'] = 'assets/datatables-additional/datatables-RowReorder/js/dataTables.rowReorder.min.js';
 
             $GLOBALS['TL_JAVASCRIPT']['jquery.list_widget.js'] = 'bundles/heimrichhannotlistwidget/assets/js/jquery.list_widget.js';
 
-            $GLOBALS['TL_CSS']['datatables-core']       = 'assets/datatables-additional/datatables.net-dt/css/jquery.dataTables.min.css';
+            $GLOBALS['TL_CSS']['datatables-core'] = 'assets/datatables-additional/datatables.net-dt/css/jquery.dataTables.min.css';
             $GLOBALS['TL_CSS']['datatables-rowReorder'] = 'assets/datatables-additional/datatables-RowReorder/css/rowReorder.dataTables.min.css';
         }
     }
@@ -223,14 +223,14 @@ class ListWidget extends Widget
         $arrOptions = !empty($arrOptions)
             ? $arrOptions
             : [
-                'table'   => $arrConfig['table'],
+                'table' => $arrConfig['table'],
                 'columns' => $arrConfig['columns'],
             ];
 
-        $objItems                       = static::fetchItems($arrOptions);
-        $arrResponse                    = [];
-        $arrResponse['draw']            = $request->hasGet('draw') ? intval($request->getGet('draw')) : 0;
-        $arrResponse['recordsTotal']    = intval(static::countTotal($arrOptions));
+        $objItems = static::fetchItems($arrOptions);
+        $arrResponse = [];
+        $arrResponse['draw'] = $request->hasGet('draw') ? intval($request->getGet('draw')) : 0;
+        $arrResponse['recordsTotal'] = intval(static::countTotal($arrOptions));
         $arrResponse['recordsFiltered'] = intval(static::countFiltered($arrOptions));
 
         // prepare
@@ -285,8 +285,14 @@ class ListWidget extends Widget
         foreach ($arrColumns as $i => $arrColumn) {
             $arrConfig[] = array_merge(
                 $arrayUtil->filterByPrefixes($arrColumn, ['searchable', 'className', 'orderable', 'type']),
-                ['targets' => $arrColumn['dt']],
-                ['render' => ['_' => 'value']]
+                [
+                    'targets' => $arrColumn['dt'],
+                ],
+                [
+                    'render' => [
+                        '_' => 'value',
+                    ],
+                ]
             );
         }
 
@@ -295,9 +301,6 @@ class ListWidget extends Widget
 
     /**
      * Count the total matching items
-     *
-     * @param array $options
-     * @return int
      */
     protected static function countTotal(array $options): int
     {
@@ -372,7 +375,7 @@ class ListWidget extends Widget
     {
         $request = System::getContainer()->get('huh.request');
         if ($request->hasGet('start') && $request->getGet('length') != -1) {
-            $arrOptions['limit']  = $request->getGet('length');
+            $arrOptions['limit'] = $request->getGet('length');
             $arrOptions['offset'] = $request->getGet('start');
         }
 
@@ -398,18 +401,18 @@ class ListWidget extends Widget
 
         $t = $arrOptions['table'];
 
-        $columns      = $arrOptions['columns'];
+        $columns = $arrOptions['columns'];
         $globalSearch = [];
         $columnSearch = [];
-        $dtColumns    = self::pluck($columns, 'dt');
-        $request      = $request->query->all();
+        $dtColumns = self::pluck($columns, 'dt');
+        $request = $request->query->all();
 
         if (isset($request['search']) && $request['search']['value'] != '') {
             $str = $request['search']['value'];
             for ($i = 0, $ien = count($request['columns']); $i < $ien; $i++) {
                 $requestColumn = $request['columns'][$i];
-                $columnIdx     = array_search($requestColumn['data'], $dtColumns);
-                $column        = $columns[$columnIdx];
+                $columnIdx = array_search($requestColumn['data'], $dtColumns);
+                $column = $columns[$columnIdx];
 
                 if (!$column['db']) {
                     continue;
@@ -424,9 +427,9 @@ class ListWidget extends Widget
         if (isset($request['columns'])) {
             for ($i = 0, $ien = count($request['columns']); $i < $ien; $i++) {
                 $requestColumn = $request['columns'][$i];
-                $columnIdx     = array_search($requestColumn['data'], $dtColumns);
-                $column        = $columns[$columnIdx];
-                $str           = $requestColumn['search']['value'];
+                $columnIdx = array_search($requestColumn['data'], $dtColumns);
+                $column = $columns[$columnIdx];
+                $str = $requestColumn['search']['value'];
 
                 if (!($column['db'] ?? null)) {
                     continue;
@@ -477,19 +480,19 @@ class ListWidget extends Widget
     {
         $request = System::getContainer()->get('huh.request');
 
-        $t       = $arrOptions['table'];
+        $t = $arrOptions['table'];
         $request = $request->query->all();
         $columns = $arrOptions['columns'];
 
         if (isset($request['order']) && count($request['order'])) {
-            $orderBy   = [];
+            $orderBy = [];
             $dtColumns = static::pluck($columns, 'dt');
             for ($i = 0, $ien = count($request['order']); $i < $ien; $i++) {
                 // Convert the column index into the column data property
-                $columnIdx     = intval($request['order'][$i]['column']);
+                $columnIdx = intval($request['order'][$i]['column']);
                 $requestColumn = $request['columns'][$columnIdx];
-                $columnIdx     = array_search($requestColumn['data'], $dtColumns);
-                $column        = $columns[$columnIdx];
+                $columnIdx = array_search($requestColumn['data'], $dtColumns);
+                $column = $columns[$columnIdx];
 
                 if (!$column['db']) {
                     continue;
@@ -514,7 +517,6 @@ class ListWidget extends Widget
 
         return $arrOptions;
     }
-
 
     /**
      * Pull a particular property from each assoc. array in a numeric array,

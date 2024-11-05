@@ -16,7 +16,7 @@ class ListWidgetResponse extends JsonResponse
                     'recordsFiltered' => $recordsFiltered,
                     'data' => $data,
                 ],
-            ]
+            ],
         ];
 
         if ($error) {
