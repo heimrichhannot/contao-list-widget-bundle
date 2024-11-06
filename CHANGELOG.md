@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0] - 2024-11-05
+- Added: custom routes for ajax requests
+- Changed: modernized bundle structure
+
 ## [1.2.2] - 2022-03-20
 - Fixed: issues with php 8
 - 
