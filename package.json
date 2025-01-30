@@ -1,0 +1,24 @@
+{
+  "name": "contao-list-widget-bundle",
+  "version": "1.0.0",
+  "description": "This bundle offers an input type for displaying a list of entities definable by a callback function.",
+  "author": "Heimrich & Hannot GmbH <digitales@heimrich-hannot.de>",
+  "license": "LGPL-3.0-or-later",
+  "dependencies": {
+    "datatables.net-dt": "^2",
+    "datatables.net-plugins": "^2"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.26.7",
+    "@babel/preset-env": "^7.26.7",
+    "@symfony/webpack-encore": "^5.0.1",
+    "webpack": "^5.97.1",
+    "webpack-cli": "^6.0.1"
+  },
+  "scripts": {
+    "build-dev": "yarn encore dev",
+    "build-production": "yarn encore production"
+  },
+  "main": "index.js",
+  "repository": "git@github.com:heimrichhannot/contao-list-widget-bundle.git"
+}

@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0] - 2025-01-30
+- Changed: replaced `heimrichhannot/datatables` with bundled datatables library
+- Changed: Raised datatables version to 2. May need some adjustments of your configuration and locales.
+
 ## [1.3.0] - 2024-11-05
 - Added: custom routes for ajax requests
 - Changed: modernized bundle structure
