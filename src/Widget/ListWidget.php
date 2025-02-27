@@ -182,7 +182,7 @@ class ListWidget extends Widget
         $objTemplate->ajax = $configuration['ajax'];
         $objTemplate->headerFields = $configuration['headerFields'];
         $objTemplate->columnDefs = htmlentities(json_encode(static::getColumnDefsData($configuration['columns'])));
-        $objTemplate->language = htmlentities(json_encode($configuration['language']));
+        $objTemplate->language = $configuration['language'] ? htmlentities(json_encode($configuration['language'])) : null;
 
         if ($configuration['ajax'] ?? false) {
 

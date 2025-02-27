@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.1] - 2025-02-27
+- Fixed: datatables not initialized correctly when language is not set on widget
+
 ## [1.4.0] - 2025-01-30
 - Changed: replaced `heimrichhannot/datatables` with bundled datatables library
 - Changed: Raised datatables version to 2. May need some adjustments of your configuration and locales.

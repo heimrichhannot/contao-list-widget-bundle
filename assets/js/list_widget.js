@@ -20,7 +20,8 @@ function initWidget() {
         if ('de' === locale) {
             language = languageDE;
         }
-        if (widget.dataset.language) {
+        let languageData = widget.dataset.language?.trim();
+        if (languageData) {
             let customLang = JSON.parse(widget.dataset.language);
 
             if ('sLengthMenu' in customLang || 'sEmptyTable' in customLang || 'sInfo' in customLang) {
