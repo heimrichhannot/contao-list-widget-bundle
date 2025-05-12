@@ -387,8 +387,8 @@ class ListWidget extends Widget
     {
         $request = System::getContainer()->get('request_stack')->getCurrentRequest();
         if ($request->query->has('start') && -1 != $request->query->get('length')) {
-            $arrOptions['limit'] = (int)$request->query->get('length');
-            $arrOptions['offset'] = (int)$request->query->get('start');
+            $arrOptions['limit'] = (int) $request->query->get('length');
+            $arrOptions['offset'] = (int) $request->query->get('start');
         }
 
         return $arrOptions;

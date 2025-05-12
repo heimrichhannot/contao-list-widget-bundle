@@ -15,7 +15,7 @@ use Symfony\Component\HttpKernel\Bundle\Bundle;
 
 class HeimrichHannotListWidgetBundle extends Bundle
 {
-    public function getPath()
+    public function getPath(): string
     {
         return \dirname(__DIR__);
     }
