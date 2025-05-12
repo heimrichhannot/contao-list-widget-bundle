@@ -51,7 +51,10 @@ class ListWidgetContext
         $slugger = new SlugGenerator((new SlugOptions())->setValidChars('A-Za-z0-9'));
         if (!empty($this->request->query->get('search')['value'])) {
             foreach ($fields as $field) {
-                $criteria->orWhere(Criteria::expr()->contains($field, $slugger->generate($this->request->query->get('search')['value'])));
+                $criteria->orWhere(Criteria::expr()->contains(
+                    $field,
+                    $slugger->generate($this->request->query->get('search')['value'])
+                ));
             }
         }
     }
@@ -73,7 +76,7 @@ class ListWidgetContext
     public function adjustDataResultStructure(array &$data): void
     {
         array_walk($data, function (&$date) {
-            $date = array_map(fn($value) => [
+            $date = array_map(fn ($value) => [
                 'value' => $value,
             ], array_values($date));
         });

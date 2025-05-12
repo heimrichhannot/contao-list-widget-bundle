@@ -1,6 +1,7 @@
 <?php
+
 /**
- * Contao Open Source CMS
+ * Contao Open Source CMS.
  *
  * Copyright (c) 2020 Heimrich & Hannot GmbH
  *
@@ -14,7 +15,7 @@ use Symfony\Component\HttpKernel\Bundle\Bundle;
 
 class HeimrichHannotListWidgetBundle extends Bundle
 {
-    public function getPath()
+    public function getPath(): string
     {
         return \dirname(__DIR__);
     }

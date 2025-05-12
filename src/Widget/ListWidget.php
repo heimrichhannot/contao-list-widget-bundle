@@ -6,6 +6,7 @@ use Contao\BackendTemplate;
 use Contao\Controller;
 use Contao\Database;
 use Contao\Model;
+use Contao\Model\Collection;
 use Contao\System;
 use Contao\Template;
 use Contao\Widget;
@@ -40,7 +41,7 @@ class ListWidget extends Widget
     }
 
     /**
-     * Generate the widget and return it as string
+     * Generate the widget and return it as string.
      *
      * @return string
      */
@@ -61,7 +62,6 @@ class ListWidget extends Widget
                 $this,
                 $this->objDca
             );
-
         }
 
         $arrConfig['ptable'] = $this->strTable;
@@ -79,36 +79,56 @@ class ListWidget extends Widget
             'ajax' => false,
         ], $arrConfig);
 
-        $dcaUtil = System::getContainer()->get('huh.utils.dca');
+        $utils = System::getContainer()->get(Utils::class);
 
-        $arrConfig = $arrConfig ?: [];
-
-        // header
-        $arrConfig['headerFields'] = $dcaUtil->getConfigByArrayOrCallbackOrFunction($arrConfig, 'header_fields', [$arrConfig, $objContext, $objDca]);
+        if (!isset($arrConfig['headerFields'])) {
+            $arrConfig['headerFields'] = $utils->dca()->executeCallback(
+                $arrConfig['header_fields_callback'],
+                $arrConfig, $objContext, $objDca
+            );
+        }
 
         if ($arrConfig['useDbAsHeader'] && $arrConfig['table']) {
             $strTable = $arrConfig['table'];
             $arrFields = Database::getInstance()->getFieldNames($strTable, true);
             $arrHeaderFields = [];
 
+            Controller::loadDataContainer($strTable);
+            System::loadLanguageFile($strTable);
+
             foreach ($arrFields as $strField) {
                 if (in_array($strField, static::$arrSkipFields)) {
                     continue;
                 }
 
-                $arrHeaderFields[$strField] = $dcaUtil->getLocalizedFieldname($strField, $strTable);
+                $arrHeaderFields[$strField] = $GLOBALS['TL_DCA'][$strTable]['fields'][$strField]['label'][0] ?: $strField;
             }
 
             $arrConfig['headerFields'] = $arrHeaderFields;
         }
 
         if (!$arrConfig['ajax']) {
-            $arrConfig['items'] = $dcaUtil->getConfigByArrayOrCallbackOrFunction($arrConfig, 'items', [$arrConfig, $objContext, $objDca]);
+            if (!isset($arrConfig['items'])) {
+                $arrConfig['items'] = $utils->dca()->executeCallback(
+                    $arrConfig['items_callback'],
+                    $arrConfig, $objContext, $objDca
+                );
+            }
         }
 
-        $arrConfig['language'] = $dcaUtil->getConfigByArrayOrCallbackOrFunction($arrConfig, 'language', [$arrConfig, $objContext, $objDca]);
+        if (!isset($arrConfig['language'])) {
+            $arrConfig['language'] = $utils->dca()->executeCallback(
+                $arrConfig['language_callback'],
+                $arrConfig, $objContext, $objDca
+            );
+        }
 
-        $arrConfig['columns'] = $dcaUtil->getConfigByArrayOrCallbackOrFunction($arrConfig, 'columns', [$arrConfig, $objContext, $objDca]);
+        if (!isset($arrConfig['columns'])) {
+            $arrConfig['columns'] = $utils->dca()->executeCallback(
+                $arrConfig['columns_callback'],
+                $arrConfig, $objContext, $objDca
+            );
+        }
 
         // prepare columns -> if not specified, get it from header fields
         if (!$arrConfig['columns']) {
@@ -135,25 +155,26 @@ class ListWidget extends Widget
 
     public static function initAjaxLoading(array $arrConfig, $objContext = null, $objDc = null): void
     {
-        $request = System::getContainer()->get('huh.request');
-        $dcaUtil = System::getContainer()->get('huh.utils.dca');
+        $request = System::getContainer()->get('request_stack')->getCurrentRequest();
+        if (!$request) {
+            return;
+        }
 
         if (!$request->isXmlHttpRequest()) {
             return;
         }
 
-        if ($request->getGet('key') == ListWidget::LOAD_ACTION && $request->getGet('scope') == $arrConfig['identifier']) {
+        if (ListWidget::LOAD_ACTION == $request->query->get('key') && $request->query->get('scope') == $arrConfig['identifier']) {
             $objResponse = new ResponseSuccess();
 
             // start loading
             if (!isset($arrConfig['ajaxConfig']['load_items_callback'])) {
-                $arrConfig['ajaxConfig']['load_items_callback'] = fn() => self::loadItems($arrConfig, [], $objContext, $objDc);
+                $arrConfig['ajaxConfig']['load_items_callback'] = fn () => self::loadItems($arrConfig, [], $objContext, $objDc);
             }
 
-            $strResult = $dcaUtil->getConfigByArrayOrCallbackOrFunction(
-                $arrConfig['ajaxConfig'],
-                'load_items',
-                [$arrConfig, [], $objContext, $objDc]
+            $strResult = System::getContainer()->get(Utils::class)->dca()->executeCallback(
+                $arrConfig['ajaxConfig']['load_items_callback'],
+                $arrConfig, [], $objContext, $objDc
             );
 
             $objResponse->setResult(new ResponseData('', $strResult));
@@ -162,7 +183,7 @@ class ListWidget extends Widget
     }
 
     /**
-     * Add widget setup to template
+     * Add widget setup to template.
      *
      * Configuration:
      * - loadAssets: (bool) Load assets (default: true)
@@ -185,7 +206,6 @@ class ListWidget extends Widget
         $objTemplate->language = $configuration['language'] ? htmlentities(json_encode($configuration['language'])) : null;
 
         if ($configuration['ajax'] ?? false) {
-
             if ($configuration['ajaxConfig']['route'] ?? false) {
                 $objTemplate->processingAction = System::getContainer()->get('router')->generate(
                     $configuration['ajaxConfig']['route'],
@@ -197,7 +217,7 @@ class ListWidget extends Widget
                 );
             } else {
                 $objTemplate->processingAction = System::getContainer()->get(Utils::class)->url()->addQueryStringParameterToUrl(
-                    'key=' . static::LOAD_ACTION . '&scope=' . $configuration['identifier'] . '&rt=' . \Contao\System::getContainer()->get('contao.csrf.token_manager')->getDefaultTokenValue()
+                    'key=' . static::LOAD_ACTION . '&scope=' . $configuration['identifier'] . '&rt=' . System::getContainer()->get('contao.csrf.token_manager')->getDefaultTokenValue()
                 );
             }
         } else {
@@ -212,7 +232,10 @@ class ListWidget extends Widget
 
     public static function loadItems($arrConfig, $arrOptions = [], $objContext = null, $objDc = null)
     {
-        $request = System::getContainer()->get('huh.request');
+        $request = System::getContainer()->get('request_stack')->getCurrentRequest();
+        if (!$request) {
+            return [];
+        }
 
         $arrOptions = !empty($arrOptions)
             ? $arrOptions
@@ -223,33 +246,31 @@ class ListWidget extends Widget
 
         $objItems = static::fetchItems($arrOptions);
         $arrResponse = [];
-        $arrResponse['draw'] = $request->hasGet('draw') ? intval($request->getGet('draw')) : 0;
+        $arrResponse['draw'] = $request->query->has('draw') ? intval($request->query->get('draw')) : 0;
         $arrResponse['recordsTotal'] = intval(static::countTotal($arrOptions));
         $arrResponse['recordsFiltered'] = intval(static::countFiltered($arrOptions));
 
         // prepare
         if (!isset($arrConfig['ajaxConfig']['prepare_items_callback'])) {
-            $arrConfig['ajaxConfig']['prepare_items_callback'] = fn() => self::prepareItems($objItems, $arrConfig, $arrOptions, $objContext, $objDc);
+            $arrConfig['ajaxConfig']['prepare_items_callback'] = fn () => self::prepareItems($objItems, $arrConfig, $arrOptions, $objContext, $objDc);
         }
 
-        $arrResponse['data'] = System::getContainer()->get('huh.utils.dca')->getConfigByArrayOrCallbackOrFunction(
-            $arrConfig['ajaxConfig'],
-            'prepare_items',
-            [
+        $arrResponse['data'] = $arrConfig['ajaxConfig']['prepare_items']
+            ?? System::getContainer()->get(Utils::class)->dca()->executeCallback(
+                $arrConfig['ajaxConfig']['prepare_items_callback'],
                 $objItems,
                 $arrConfig,
                 $arrOptions,
                 $objContext,
                 $objDc,
-            ]
-        );
+            );
 
         return $arrResponse;
     }
 
     protected static function prepareItems($objItems, $arrConfig, $arrOptions = [], $objContext = null, $objDc = null)
     {
-        if ($objItems === null) {
+        if (null === $objItems) {
             return [];
         }
 
@@ -273,12 +294,11 @@ class ListWidget extends Widget
 
     protected static function getColumnDefsData($arrColumns)
     {
-        $arrayUtil = System::getContainer()->get('huh.utils.array');
         $arrConfig = [];
 
         foreach ($arrColumns as $i => $arrColumn) {
             $arrConfig[] = array_merge(
-                $arrayUtil->filterByPrefixes($arrColumn, ['searchable', 'className', 'orderable', 'type']),
+                static::filterByPrefixes($arrColumn, ['searchable', 'className', 'orderable', 'type']),
                 [
                     'targets' => $arrColumn['dt'],
                 ],
@@ -294,7 +314,7 @@ class ListWidget extends Widget
     }
 
     /**
-     * Count the total matching items
+     * Count the total matching items.
      */
     protected static function countTotal(array $options): int
     {
@@ -313,11 +333,9 @@ class ListWidget extends Widget
     }
 
     /**
-     * Count the filtered items
+     * Count the filtered items.
      *
-     * @param  array $options SQL options
-     *
-     * @return integer
+     * @param array $options SQL options
      */
     protected static function countFiltered(array $options): int
     {
@@ -339,13 +357,13 @@ class ListWidget extends Widget
     }
 
     /**
-     * Fetch the matching items
+     * Fetch the matching items.
      *
-     * @param  array $arrOptions SQL options
+     * @param array $arrOptions SQL options
      *
-     * @return array          Server-side processing response array
+     * @return Collection|null Server-side processing response array
      */
-    protected static function fetchItems(&$arrOptions = [])
+    protected static function fetchItems(array &$arrOptions = []): ?Collection
     {
         $arrOptions = static::limitSQL($arrOptions);
         $arrOptions = static::filterSQL($arrOptions);
@@ -357,27 +375,27 @@ class ListWidget extends Widget
     }
 
     /**
-     * Paging
+     * Paging.
      *
      * Construct the LIMIT clause for server-side processing SQL query
      *
-     * @param  array $arrOptions SQL options
+     * @param array $arrOptions SQL options
      *
      * @return array The $arrOptions filled with limit clause
      */
     protected static function limitSQL($arrOptions)
     {
-        $request = System::getContainer()->get('huh.request');
-        if ($request->hasGet('start') && $request->getGet('length') != -1) {
-            $arrOptions['limit'] = $request->getGet('length');
-            $arrOptions['offset'] = $request->getGet('start');
+        $request = System::getContainer()->get('request_stack')->getCurrentRequest();
+        if ($request->query->has('start') && -1 != $request->query->get('length')) {
+            $arrOptions['limit'] = (int) $request->query->get('length');
+            $arrOptions['offset'] = (int) $request->query->get('start');
         }
 
         return $arrOptions;
     }
 
     /**
-     * Searching / Filtering
+     * Searching / Filtering.
      *
      * Construct the WHERE clause for server-side processing SQL query.
      *
@@ -385,13 +403,13 @@ class ListWidget extends Widget
      * word by word on any field. It's possible to do here performance on large
      * databases would be very poor
      *
-     * @param  array $arrOptions SQL options
+     * @param array $arrOptions SQL options
      *
      * @return array The $arrOptions filled with where conditions (values and columns)
      */
     protected static function filterSQL($arrOptions)
     {
-        $request = System::getContainer()->get('huh.request');
+        $request = System::getContainer()->get('request_stack')->getCurrentRequest();
 
         $t = $arrOptions['table'];
 
@@ -401,9 +419,9 @@ class ListWidget extends Widget
         $dtColumns = self::pluck($columns, 'dt');
         $request = $request->query->all();
 
-        if (isset($request['search']) && $request['search']['value'] != '') {
+        if (isset($request['search']) && '' != $request['search']['value']) {
             $str = $request['search']['value'];
-            for ($i = 0, $ien = count($request['columns']); $i < $ien; $i++) {
+            for ($i = 0, $ien = count($request['columns']); $i < $ien; ++$i) {
                 $requestColumn = $request['columns'][$i];
                 $columnIdx = array_search($requestColumn['data'], $dtColumns);
                 $column = $columns[$columnIdx];
@@ -412,14 +430,14 @@ class ListWidget extends Widget
                     continue;
                 }
 
-                if ($requestColumn['searchable'] == 'true') {
+                if ('true' == $requestColumn['searchable']) {
                     $globalSearch[] = "$t." . $column['db'] . " LIKE '%%" . $str . "%%'";
                 }
             }
         }
         // Individual column filtering
         if (isset($request['columns'])) {
-            for ($i = 0, $ien = count($request['columns']); $i < $ien; $i++) {
+            for ($i = 0, $ien = count($request['columns']); $i < $ien; ++$i) {
                 $requestColumn = $request['columns'][$i];
                 $columnIdx = array_search($requestColumn['data'], $dtColumns);
                 $column = $columns[$columnIdx];
@@ -429,7 +447,7 @@ class ListWidget extends Widget
                     continue;
                 }
 
-                if ($requestColumn['searchable'] == 'true' && $str != '') {
+                if ('true' == $requestColumn['searchable'] && '' != $str) {
                     $columnSearch[] = "$t." . $column['db'] . " LIKE '%%" . $str . "%%'";
                 }
             }
@@ -441,7 +459,7 @@ class ListWidget extends Widget
         }
 
         if (count($columnSearch)) {
-            $where = $where === '' ? implode(' AND ', $columnSearch) : $where . ' AND ' . implode(' AND ', $columnSearch);
+            $where = '' === $where ? implode(' AND ', $columnSearch) : $where . ' AND ' . implode(' AND ', $columnSearch);
         }
 
         if (isset($arrOptions['column'])) {
@@ -462,17 +480,17 @@ class ListWidget extends Widget
     }
 
     /**
-     * Ordering
+     * Ordering.
      *
      * Construct the ORDER BY clause for server-side processing SQL query
      *
-     * @param  array $arrOptions SQL options
+     * @param array $arrOptions SQL options
      *
      * @return array The $arrOptions filled with order conditions
      */
     protected static function orderSQL($arrOptions)
     {
-        $request = System::getContainer()->get('huh.request');
+        $request = System::getContainer()->get('request_stack')->getCurrentRequest();
 
         $t = $arrOptions['table'];
         $request = $request->query->all();
@@ -481,7 +499,7 @@ class ListWidget extends Widget
         if (isset($request['order']) && count($request['order'])) {
             $orderBy = [];
             $dtColumns = static::pluck($columns, 'dt');
-            for ($i = 0, $ien = count($request['order']); $i < $ien; $i++) {
+            for ($i = 0, $ien = count($request['order']); $i < $ien; ++$i) {
                 // Convert the column index into the column data property
                 $columnIdx = intval($request['order'][$i]['column']);
                 $requestColumn = $request['columns'][$columnIdx];
@@ -492,15 +510,14 @@ class ListWidget extends Widget
                     continue;
                 }
 
-                if ($requestColumn['orderable'] == 'true') {
-                    $dir = $request['order'][$i]['dir'] === 'asc' ? 'ASC' : 'DESC';
+                if ('true' == $requestColumn['orderable']) {
+                    $dir = 'asc' === $request['order'][$i]['dir'] ? 'ASC' : 'DESC';
 
-                    if ($column['name'] == 'transport') {
+                    if ('transport' == $column['name']) {
                         $orderBy[] = "GREATEST($t." . $column['db'] . ", $t.transportTime) " . $dir;
                     } else {
-                        $orderBy[] = "$t." . $column['db'] . " " . $dir;
+                        $orderBy[] = "$t." . $column['db'] . ' ' . $dir;
                     }
-
                 }
             }
 
@@ -516,18 +533,40 @@ class ListWidget extends Widget
      * Pull a particular property from each assoc. array in a numeric array,
      * returning and array of the property values from each item.
      *
-     * @param  array $a Array to get data from
-     * @param  string $prop Property to read
+     * @param array  $a    Array to get data from
+     * @param string $prop Property to read
      *
-     * @return array        Array of property values
+     * @return array Array of property values
      */
     protected static function pluck($a, $prop)
     {
         $out = [];
-        for ($i = 0, $len = count($a); $i < $len; $i++) {
+        for ($i = 0, $len = count($a); $i < $len; ++$i) {
             $out[] = $a[$i][$prop];
         }
 
         return $out;
+    }
+
+    /**
+     * @interal
+     */
+    public static function filterByPrefixes(array $data = [], $prefixes = [])
+    {
+        $extract = [];
+
+        if (!\is_array($prefixes) || empty($prefixes)) {
+            return $data;
+        }
+
+        foreach ($data as $key => $value) {
+            foreach ($prefixes as $prefix) {
+                if (str_starts_with($key, (string) $prefix)) {
+                    $extract[$key] = $value;
+                }
+            }
+        }
+
+        return $extract;
     }
 }

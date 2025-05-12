@@ -172,7 +172,7 @@ public static function loadItemsNew($arrConfig, $arrOptions = [], $objContext = 
 Name | Possible value | Description
 ---- | -------------- | -----------
 identifier | string | Needed for distinguishing requests from multiple list widget implementations, e.g. ```'module_' . $this->id```
-header_fields | array | Must return an array containing the header fields. The keys must match the keys of the arrays/objects in items/items_callback.
+headerFields | array | Must return an array containing the header fields. The keys must match the keys of the arrays/objects in items/items_callback.
 header_fields_callback | callback array, function closure | Must return an array containing the header fields. The keys must match the keys of the arrays/objects in items/items_callback.
 items | array | Must return an array containing the items to be displayed. The item keys must match those in header_fields/header_fields_callback.
 items_callback | callback array, function closure | Must return an array containing the items to be displayed. The item keys must match those in header_fields/header_fields_callback.

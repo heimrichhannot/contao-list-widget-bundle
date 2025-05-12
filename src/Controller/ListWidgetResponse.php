@@ -6,7 +6,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 
 class ListWidgetResponse extends JsonResponse
 {
-    public function __construct(int $draw, int $recordsTotal, int $recordsFiltered, array $data = null, ?string $error = null, int $status = 200, array $headers = [], bool $json = false)
+    public function __construct(int $draw, int $recordsTotal, int $recordsFiltered, ?array $data = null, ?string $error = null, int $status = 200, array $headers = [], bool $json = false)
     {
         $data = [
             'result' => [
