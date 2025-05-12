@@ -6,6 +6,7 @@ use Contao\BackendTemplate;
 use Contao\Controller;
 use Contao\Database;
 use Contao\Model;
+use Contao\Model\Collection;
 use Contao\System;
 use Contao\Template;
 use Contao\Widget;
@@ -341,11 +342,11 @@ class ListWidget extends Widget
     /**
      * Fetch the matching items
      *
-     * @param  array $arrOptions SQL options
+     * @param array $arrOptions SQL options
      *
-     * @return array          Server-side processing response array
+     * @return Collection|null Server-side processing response array
      */
-    protected static function fetchItems(&$arrOptions = [])
+    protected static function fetchItems(array &$arrOptions = []): ?Collection
     {
         $arrOptions = static::limitSQL($arrOptions);
         $arrOptions = static::filterSQL($arrOptions);
@@ -531,7 +532,10 @@ class ListWidget extends Widget
         return $out;
     }
 
-    private static function filterByPrefixes(array $data = [], $prefixes = [])
+    /**
+     * @interal
+     */
+    public static function filterByPrefixes(array $data = [], $prefixes = [])
     {
         $extract = [];
 
