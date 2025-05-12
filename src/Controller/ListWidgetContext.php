@@ -76,7 +76,7 @@ class ListWidgetContext
     public function adjustDataResultStructure(array &$data): void
     {
         array_walk($data, function (&$date) {
-            $date = array_map(fn($value) => [
+            $date = array_map(fn ($value) => [
                 'value' => $value,
             ], array_values($date));
         });

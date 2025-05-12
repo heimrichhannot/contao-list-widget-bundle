@@ -17,6 +17,7 @@ return RectorConfig::configure()
     ])
     ->withRules([
         AddVoidReturnTypeWhereNoReturnRector::class,
+        \HeimrichHannot\Rector\Rector\RequestBundleToSymfonyRequestRector::class,
 
         # In Vorbereitung für PHP 8.4:
         ExplicitNullableParamTypeRector::class
