@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0] - 2025-05-12
+- Changed: allow contao 5
+
 ## [1.4.1] - 2025-02-27
 - Fixed: datatables not initialized correctly when language is not set on widget
 

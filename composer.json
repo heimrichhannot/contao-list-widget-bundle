@@ -19,10 +19,9 @@
     "php": "^8.1",
     "ext-json": "*",
     "ausi/slug-generator": "^1.0",
-    "contao/core-bundle": "^4.13",
+    "contao/core-bundle": "^4.13 || ^5.0",
     "heimrichhannot/contao-ajax-bundle": "~1.0",
-    "heimrichhannot/contao-request-bundle": "^1.1.1",
-    "heimrichhannot/contao-utils-bundle": "^2.225",
+    "heimrichhannot/contao-utils-bundle": "^2.241 || ^3.8",
     "symfony/http-foundation": "^5.4 || ^6.4 || ^7.0",
     "symfony/http-kernel": "^5.4 || ^6.4 || ^7.0"
   },
@@ -38,13 +37,13 @@
     "contao-manager-plugin": "HeimrichHannot\\ListWidgetBundle\\ContaoManager\\Plugin"
   },
   "require-dev": {
-    "rector/rector": "^2.0",
     "contao/contao-rector": "dev-main",
-    "symplify/easy-coding-standard": "^12.5",
+    "contao/manager-plugin": "^2.13",
+    "heimrichhannot/contao-rector": "dev-main",
     "phpstan/phpstan": "^2.1",
     "phpstan/phpstan-symfony": "^2.0",
-    "contao/manager-plugin": "^2.13",
-    "heimrichhannot/contao-rector": "dev-main"
+    "rector/rector": "^2.0",
+    "symplify/easy-coding-standard": "^12.5"
   },
   "repositories": [
     {
