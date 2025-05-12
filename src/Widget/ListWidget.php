@@ -125,7 +125,7 @@ class ListWidget extends Widget
 
         if (!isset($arrConfig['columns'])) {
             $arrConfig['columns'] = $utils->dca()->executeCallback(
-                $arrConfig[ 'columns_callback'],
+                $arrConfig['columns_callback'],
                 $arrConfig, $objContext, $objDca
             );
         }
