@@ -82,7 +82,10 @@ class ListWidget extends Widget
         $utils = System::getContainer()->get(Utils::class);
 
         if (!isset($arrConfig['headerFields'])) {
-            $arrConfig['headerFields'] = $utils->dca()->executeCallback([$arrConfig, 'header_fields_callback']);
+            $arrConfig['headerFields'] = $utils->dca()->executeCallback(
+                $arrConfig['header_fields_callback'],
+                $arrConfig, $objContext, $objDca
+            );
         }
 
         if ($arrConfig['useDbAsHeader'] && $arrConfig['table']) {
@@ -106,16 +109,25 @@ class ListWidget extends Widget
 
         if (!$arrConfig['ajax']) {
             if (!isset($arrConfig['items'])) {
-                $arrConfig['items'] = $utils->dca()->executeCallback([$arrConfig, 'items_callback']);
+                $arrConfig['items'] = $utils->dca()->executeCallback(
+                    $arrConfig['items_callback'],
+                    $arrConfig, $objContext, $objDca
+                );
             }
         }
 
         if (!isset($arrConfig['language'])) {
-            $arrConfig['language'] = $utils->dca()->executeCallback([$arrConfig, 'language_callback']);
+            $arrConfig['language'] = $utils->dca()->executeCallback(
+                $arrConfig['language_callback'],
+                $arrConfig, $objContext, $objDca
+            );
         }
 
         if (!isset($arrConfig['columns'])) {
-            $arrConfig['columns'] = $utils->dca()->executeCallback([$arrConfig, 'columns_callback']);
+            $arrConfig['columns'] = $utils->dca()->executeCallback(
+                $arrConfig[ 'columns_callback'],
+                $arrConfig, $objContext, $objDca
+            );
         }
 
         // prepare columns -> if not specified, get it from header fields
@@ -160,7 +172,10 @@ class ListWidget extends Widget
                 $arrConfig['ajaxConfig']['load_items_callback'] = fn () => self::loadItems($arrConfig, [], $objContext, $objDc);
             }
 
-            $strResult = System::getContainer()->get(Utils::class)->dca()->executeCallback([$arrConfig['ajaxConfig'], 'load_items_callback']);
+            $strResult = System::getContainer()->get(Utils::class)->dca()->executeCallback(
+                $arrConfig['ajaxConfig']['load_items_callback'],
+                $arrConfig, [], $objContext, $objDc
+            );
 
             $objResponse->setResult(new ResponseData('', $strResult));
             $objResponse->output();
@@ -241,7 +256,14 @@ class ListWidget extends Widget
         }
 
         $arrResponse['data'] = $arrConfig['ajaxConfig']['prepare_items']
-            ?? System::getContainer()->get(Utils::class)->dca()->executeCallback($arrConfig['ajaxConfig']['prepare_items_callback']);
+            ?? System::getContainer()->get(Utils::class)->dca()->executeCallback(
+                $arrConfig['ajaxConfig']['prepare_items_callback'],
+                $objItems,
+                $arrConfig,
+                $arrOptions,
+                $objContext,
+                $objDc,
+            );
 
         return $arrResponse;
     }

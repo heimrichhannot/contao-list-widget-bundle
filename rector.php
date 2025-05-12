@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Contao\Rector\Set\ContaoLevelSetList;
 use Contao\Rector\Set\ContaoSetList;
+use HeimrichHannot\Rector\Rector\RequestBundleToSymfonyRequestRector;
 use Rector\Config\RectorConfig;
 use Rector\Php84\Rector\Param\ExplicitNullableParamTypeRector;
 use Rector\Set\ValueObject\LevelSetList;
@@ -17,7 +18,7 @@ return RectorConfig::configure()
     ])
     ->withRules([
         AddVoidReturnTypeWhereNoReturnRector::class,
-        \HeimrichHannot\Rector\Rector\RequestBundleToSymfonyRequestRector::class,
+        RequestBundleToSymfonyRequestRector::class,
 
         # In Vorbereitung für PHP 8.4:
         ExplicitNullableParamTypeRector::class
