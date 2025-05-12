@@ -2,7 +2,6 @@
 
 namespace HeimrichHannot\ListWidgetBundle\Widget;
 
-use Contao\ArrayUtil;
 use Contao\BackendTemplate;
 use Contao\Controller;
 use Contao\Database;
@@ -12,7 +11,6 @@ use Contao\Template;
 use Contao\Widget;
 use HeimrichHannot\AjaxBundle\Response\ResponseData;
 use HeimrichHannot\AjaxBundle\Response\ResponseSuccess;
-use HeimrichHannot\UtilsBundle\StaticUtil\SUtils;
 use HeimrichHannot\UtilsBundle\Util\Utils;
 
 class ListWidget extends Widget
@@ -205,7 +203,7 @@ class ListWidget extends Widget
                 );
             } else {
                 $objTemplate->processingAction = System::getContainer()->get(Utils::class)->url()->addQueryStringParameterToUrl(
-                    'key=' . static::LOAD_ACTION . '&scope=' . $configuration['identifier'] . '&rt=' . \Contao\System::getContainer()->get('contao.csrf.token_manager')->getDefaultTokenValue()
+                    'key=' . static::LOAD_ACTION . '&scope=' . $configuration['identifier'] . '&rt=' . System::getContainer()->get('contao.csrf.token_manager')->getDefaultTokenValue()
                 );
             }
         } else {
@@ -543,7 +541,7 @@ class ListWidget extends Widget
 
         foreach ($data as $key => $value) {
             foreach ($prefixes as $prefix) {
-                if (str_starts_with($key, $prefix)) {
+                if (str_starts_with($key, (string) $prefix)) {
                     $extract[$key] = $value;
                 }
             }
