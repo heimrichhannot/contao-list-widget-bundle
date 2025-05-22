@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.1] - 2025-05-22
+- Fixed: symfony 6 support
+- Fixed: warnings
+
 ## [1.5.0] - 2025-05-12
 - Changed: allow contao 5
 

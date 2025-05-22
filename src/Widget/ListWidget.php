@@ -83,7 +83,7 @@ class ListWidget extends Widget
 
         if (!isset($arrConfig['headerFields'])) {
             $arrConfig['headerFields'] = $utils->dca()->executeCallback(
-                $arrConfig['header_fields_callback'],
+                $arrConfig['header_fields_callback'] ?? null,
                 $arrConfig, $objContext, $objDca
             );
         }
@@ -110,7 +110,7 @@ class ListWidget extends Widget
         if (!$arrConfig['ajax']) {
             if (!isset($arrConfig['items'])) {
                 $arrConfig['items'] = $utils->dca()->executeCallback(
-                    $arrConfig['items_callback'],
+                    $arrConfig['items_callback'] ?? null,
                     $arrConfig, $objContext, $objDca
                 );
             }
@@ -118,14 +118,14 @@ class ListWidget extends Widget
 
         if (!isset($arrConfig['language'])) {
             $arrConfig['language'] = $utils->dca()->executeCallback(
-                $arrConfig['language_callback'],
+                $arrConfig['language_callback'] ?? null,
                 $arrConfig, $objContext, $objDca
             );
         }
 
         if (!isset($arrConfig['columns'])) {
             $arrConfig['columns'] = $utils->dca()->executeCallback(
-                $arrConfig['columns_callback'],
+                $arrConfig['columns_callback'] ?? null,
                 $arrConfig, $objContext, $objDca
             );
         }
@@ -173,7 +173,7 @@ class ListWidget extends Widget
             }
 
             $strResult = System::getContainer()->get(Utils::class)->dca()->executeCallback(
-                $arrConfig['ajaxConfig']['load_items_callback'],
+                $arrConfig['ajaxConfig']['load_items_callback'] ?? null,
                 $arrConfig, [], $objContext, $objDc
             );
 
@@ -257,7 +257,7 @@ class ListWidget extends Widget
 
         $arrResponse['data'] = $arrConfig['ajaxConfig']['prepare_items']
             ?? System::getContainer()->get(Utils::class)->dca()->executeCallback(
-                $arrConfig['ajaxConfig']['prepare_items_callback'],
+                $arrConfig['ajaxConfig']['prepare_items_callback'] ?? null,
                 $objItems,
                 $arrConfig,
                 $arrOptions,

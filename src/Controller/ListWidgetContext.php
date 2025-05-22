@@ -49,7 +49,7 @@ class ListWidgetContext
     public function applySearchToCriteria(Criteria $criteria, array $fields): void
     {
         $slugger = new SlugGenerator((new SlugOptions())->setValidChars('A-Za-z0-9'));
-        if (!empty($this->request->query->get('search')['value'])) {
+        if (!empty($this->request->query->all['search']['value'] ?? '')) {
             foreach ($fields as $field) {
                 $criteria->orWhere(Criteria::expr()->contains(
                     $field,
@@ -64,8 +64,8 @@ class ListWidgetContext
         $criteria->setMaxResults($this->request->query->get('length'));
         $criteria->setFirstResult($this->request->query->get('start', 0));
 
-        if (!empty($this->request->query->get('order'))) {
-            foreach ($this->request->query->get('order') as $order) {
+        if (!empty($this->request->query->all()['order'])) {
+            foreach ($this->request->query->all()['order'] as $order) {
                 $criteria->orderBy([
                     $fields[$order['column']] => $order['dir'],
                 ]);
