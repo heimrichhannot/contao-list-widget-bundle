@@ -48,14 +48,18 @@ class ListWidgetContext
 
     public function applySearchToCriteria(Criteria $criteria, array $fields): void
     {
+        $data = $this->request->query->all();
+        if (empty($data['search']['value'] ?? '')) {
+            return;
+        }
+
         $slugger = new SlugGenerator((new SlugOptions())->setValidChars('A-Za-z0-9'));
-        if (!empty($this->request->query->all()['search']['value'] ?? '')) {
-            foreach ($fields as $field) {
-                $criteria->orWhere(Criteria::expr()->contains(
-                    $field,
-                    $slugger->generate($this->request->query->get('search')['value'])
-                ));
-            }
+
+        foreach ($fields as $field) {
+            $criteria->orWhere(Criteria::expr()->contains(
+                $field,
+                $slugger->generate($data['search']['value'] ?? '')
+            ));
         }
     }
 

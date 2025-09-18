@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.3] - 2025-09-18
+- Fixed: another issue with applySearchToCriteria in custom routes
+
 ## [1.5.2] - 2025-08-12
 - Fixed: search not working when using applySearchToCriteria in custom routes
 
