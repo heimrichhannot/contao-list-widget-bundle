@@ -561,7 +561,7 @@ class ListWidget extends Widget
 
         foreach ($data as $key => $value) {
             foreach ($prefixes as $prefix) {
-                if (str_starts_with($key, (string) $prefix)) {
+                if (str_starts_with((string) $key, (string) $prefix)) {
                     $extract[$key] = $value;
                 }
             }
