@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.4] - 2026-10-26
+- Fixed: loading issues in contao 5.7 backend due turbo
+
 ## [1.5.3] - 2025-09-18
 - Fixed: another issue with applySearchToCriteria in custom routes
 
