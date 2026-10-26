@@ -65,9 +65,28 @@ function initWidget() {
         }
 
         if (!DataTable.isDataTable(table)) {
+            originalTables.set(widget, table.cloneNode(true));
             new DataTable(table, options);
         }
     });
 }
 
-document.addEventListener('DOMContentLoaded', initWidget);
+const originalTables = new WeakMap();
+
+// The script may be loaded after DOMContentLoaded (e.g. merged into <head> by a Turbo visit)
+if ('loading' === document.readyState) {
+    document.addEventListener('DOMContentLoaded', initWidget);
+} else {
+    initWidget();
+}
+document.addEventListener('turbo:load', initWidget);
+// Restore the plain table before Turbo caches the page, otherwise a cache restore wraps it twice.
+// DataTable.destroy() can't be used: its jQuery "destroy" event calls MooTools' Element.destroy() in the Contao backend.
+document.addEventListener('turbo:before-cache', () => {
+    document.querySelectorAll('.list-widget').forEach(widget => {
+        let wrapper = widget.querySelector('.dt-container');
+        if (wrapper && originalTables.has(widget)) {
+            wrapper.replaceWith(originalTables.get(widget));
+        }
+    });
+});
